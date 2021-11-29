@@ -119,8 +119,8 @@ namespace bOPRF
 		std::unique_ptr<ByteStream> myMaskBuff1(new ByteStream());
 		std::unique_ptr<ByteStream> myMaskBuff2(new ByteStream());
 		// std::unique_ptr<ByteStream> myMaskBuff3(new ByteStream());
-		myMaskBuff1->resize(mSenderSize * maskSize);
-		myMaskBuff2->resize(mSenderSize * maskSize);
+		myMaskBuff1->resize(mSenderSize * maskSize * 2);
+		myMaskBuff2->resize(mSenderSize * maskSize * 2);
 		// myMaskBuff3->resize(mSenderSize * maskSize);
 
 		//create permute array to add my mask in the permuted positions

@@ -170,7 +170,7 @@ namespace bOPRF
 
 		for (int i = 0; i < 2; i++)
 		{
-			localMasks[i].reserve(mBins.mBinCount);
+			localMasks[i].reserve(mBins.mBinCount * 2);
 		}
 
 		std::unique_ptr<ByteStream> locaStashlMasks(new ByteStream());
@@ -238,63 +238,62 @@ namespace bOPRF
 		}
 		gTimer.setTimePoint("R Online.sendBucketMask done");
 
-		//receive the sender's marks, we have 3 buffs that corresponding to the mask of elements used hash index 0,1,2
-		for (u64 k = 0; k < 2; k++)
+		//receive the sender's marks, we have 2 buffs that corresponding to the mask of elements used hash index 0,1,2
+
+		for (u64 buffIdx = 0; buffIdx < 2; buffIdx++)
 		{
-			for (u64 buffIdx = 0; buffIdx < 2; buffIdx++)
+			ByteStream recvBuff;
+			chl.recv(recvBuff);
+
+			// double check the size.
+			if (recvBuff.size() != mSenderSize * maskSize * 2)
 			{
-				ByteStream recvBuff;
-				chl.recv(recvBuff);
+				Log::out << "recvBuff.size() != expectedSize" << Log::endl;
+				throw std::runtime_error("rt error at " LOCATION);
+			}
 
-				// double check the size.
-				if (recvBuff.size() != mSenderSize * maskSize)
+			auto theirMasks = recvBuff.data();
+
+			//loop each mask
+			if (maskSize >= 8)
+			{
+				//if masksize>=8, we can check 64 bits of key from the map first
+				for (u64 i = 0; i < mSenderSize * 2; ++i)
 				{
-					Log::out << "recvBuff.size() != expectedSize" << Log::endl;
-					throw std::runtime_error("rt error at " LOCATION);
-				}
+					auto &msk = *(u64 *)(theirMasks);
 
-				auto theirMasks = recvBuff.data();
+					// check 64 first bits
+					auto match = localMasks[buffIdx].find(msk);
 
-				//loop each mask
-				if (maskSize >= 8)
-				{
-					//if masksize>=8, we can check 64 bits of key from the map first
-					for (u64 i = 0; i < mSenderSize; ++i)
+					//if match, check for whole bits
+					if (match != localMasks[buffIdx].end())
 					{
-						auto &msk = *(u64 *)(theirMasks);
-
-						// check 64 first bits
-						auto match = localMasks[buffIdx].find(msk);
-
-						//if match, check for whole bits
-						if (match != localMasks[buffIdx].end())
+						if (memcmp(theirMasks, &match->second.first, maskSize) == 0) // check full mask
 						{
-							if (memcmp(theirMasks, &match->second.first, maskSize) == 0) // check full mask
-							{
-								mIntersection.push_back(match->second.second);
-								//Log::out << "#id: " << match->second.second << Log::endl;
-							}
+							mIntersection.push_back(match->second.second);
+							//Log::out << "#id: " << match->second.second << Log::endl;
 						}
-						theirMasks += maskSize;
 					}
+					theirMasks += maskSize;
 				}
-				else
+			}
+			else
+			{
+				for (u64 i = 0; i < mSenderSize * 2; ++i)
 				{
-					for (u64 i = 0; i < mSenderSize; ++i)
+					for (auto match = localMasks[buffIdx].begin(); match != localMasks[buffIdx].end(); ++match)
 					{
-						for (auto match = localMasks[buffIdx].begin(); match != localMasks[buffIdx].end(); ++match)
+						if (memcmp(theirMasks, &match->second.first, maskSize) == 0) // check full mask
 						{
-							if (memcmp(theirMasks, &match->second.first, maskSize) == 0) // check full mask
-							{
-								mIntersection.push_back(match->second.second);
-								//Log::out << "#id: " << match->second.second << Log::endl;
-							}
+							mIntersection.push_back(match->second.second);
+							//Log::out << "#id: " << match->second.second << Log::endl;
 						}
-						theirMasks += maskSize;
 					}
+					theirMasks += maskSize;
 				}
 			}
 		}
+
 		gTimer.setTimePoint("R Online.Bucket done");
 
 		//======================STASH BIN==========================
