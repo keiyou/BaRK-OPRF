@@ -14,8 +14,7 @@ namespace mpl = boost::mpl;
 namespace bOPRF
 {
 
-
-	std::string hexString(u8* data, u64 length)
+	std::string hexString(u8 *data, u64 length)
 	{
 		std::stringstream ss;
 
@@ -32,18 +31,16 @@ namespace bOPRF
 	{
 	}
 
-
 	BopPsiReceiver::~BopPsiReceiver()
 	{
 	}
 
-	void BopPsiReceiver::init(u64 senderSize, u64 recverSize, u64 statSecParam, Channel & chl0, SSOtExtReceiver& ots, block seed)
+	void BopPsiReceiver::init(u64 senderSize, u64 recverSize, u64 statSecParam, Channel &chl0, SSOtExtReceiver &ots, block seed)
 	{
-		init(senderSize, recverSize, statSecParam, { &chl0 }, ots, seed);
+		init(senderSize, recverSize, statSecParam, {&chl0}, ots, seed);
 	}
 
-
-	void BopPsiReceiver::init(u64 senderSize, u64 recverSize, u64 statSecParam, const std::vector<Channel*>& chls, SSOtExtReceiver& otRecv, block seed)
+	void BopPsiReceiver::init(u64 senderSize, u64 recverSize, u64 statSecParam, const std::vector<Channel *> &chls, SSOtExtReceiver &otRecv, block seed)
 	{
 
 		mStatSecParam = statSecParam;
@@ -56,8 +53,7 @@ namespace bOPRF
 		PRNG prngHashing(seed);
 		block myHashSeeds;
 		myHashSeeds = prngHashing.get_block();
-		auto& chl0 = *chls[0];
-
+		auto &chl0 = *chls[0];
 
 		// we need a random hash function, so both commit to a seed and then decommit later
 		chl0.asyncSend(&myHashSeeds, sizeof(block));
@@ -65,7 +61,6 @@ namespace bOPRF
 		chl0.asyncRecv(&theirHashingSeeds, sizeof(block));
 
 		//gTimer.setTimePoint("Init.hashSeed");
-
 
 		// init Cuckoo hash
 		mBins.init(mRecverSize, mSenderSize);
@@ -97,9 +92,9 @@ namespace bOPRF
 		//	Log::out << gTimer;
 	}
 
-	void BopPsiReceiver::sendInput(std::vector<block>& inputs, Channel & chl)
+	void BopPsiReceiver::sendInput(std::vector<block> &inputs, Channel &chl)
 	{
-		sendInput(inputs, { &chl });
+		sendInput(inputs, {&chl});
 	}
 
 	struct has_const_member
@@ -108,19 +103,16 @@ namespace bOPRF
 
 		has_const_member(bool x_)
 			: x(x_)
-		{ }
-
+		{
+		}
 	};
 
-	void BopPsiReceiver::sendInput(std::vector<block>& inputs, const std::vector<Channel*>& chls)
+	void BopPsiReceiver::sendInput(std::vector<block> &inputs, const std::vector<Channel *> &chls)
 	{
-
-
-
 
 		//const bool leq1 = true;
 		//define keysearch of mask based on mask length
-//		typedef std::conditional<leq1, u32, u64>::type uMask;
+		//		typedef std::conditional<leq1, u32, u64>::type uMask;
 
 		// check that the number of inputs is as expected.
 		if (inputs.size() != mRecverSize)
@@ -128,7 +120,7 @@ namespace bOPRF
 		gTimer.setTimePoint("R Online.Start");
 
 		//asign channel
-		auto& chl = *chls[0];
+		auto &chl = *chls[0];
 
 		SHA1 sha1;
 		u8 hashBuff[SHA1::HashSize];
@@ -137,10 +129,10 @@ namespace bOPRF
 		PRNG prng(_mm_set_epi32(42534612345, 34557734565, 211234435, 23987045));
 
 		u64 codeWordSize = get_codeword_size(std::max<u64>(mSenderSize, mRecverSize)); //by byte
-		u64 maskSize = get_mask_size(mSenderSize, mRecverSize); //by byte
+		u64 maskSize = get_mask_size(mSenderSize, mRecverSize);						   //by byte
 		blockBop codeWord;
 
-		//hash all items, use for: 1) arrage each item to bin using Cuckoo; 
+		//hash all items, use for: 1) arrage each item to bin using Cuckoo;
 		//                         2) use for psedo-codeword.
 		std::array<AES, 4> AESHASH;
 		TODO("make real keys seeds");
@@ -167,9 +159,9 @@ namespace bOPRF
 		mBins.insertItems(aesHashBuffs);
 		//mBins.print();
 
-		//we use 4 unordered_maps, we put the mask to the corresponding unordered_map 
+		//we use 4 unordered_maps, we put the mask to the corresponding unordered_map
 		//that indicates of the hash function index 0,1,2. and the last unordered_maps is used for stash bin
-		std::array<std::unordered_map<u64, std::pair<block, u64>>, 3> localMasks;
+		std::array<std::unordered_map<u64, std::pair<block, u64> >, 3> localMasks;
 		//store the masks of elements that map to bin by h0
 		localMasks[0].reserve(mBins.mBinCount); //upper bound of # mask
 		//store the masks of elements that map to bin by h1
@@ -178,71 +170,69 @@ namespace bOPRF
 		localMasks[2].reserve(mBins.mBinCount);
 
 		std::unique_ptr<ByteStream> locaStashlMasks(new ByteStream());
-		locaStashlMasks->resize(mNumStash* maskSize);
-
+		locaStashlMasks->resize(mNumStash * maskSize);
 
 		//======================Bucket BINs (not stash)==========================
 
 		//pipelining the execution of the online phase (i.e., OT correction step) into multiple batches
 		TODO("run in parallel");
 		auto binStart = 0;
-		auto binEnd = mBins.mBinCount;
+		auto binEnd = mBins.mBinCount / 3;
 		gTimer.setTimePoint("R Online.computeBucketMask start");
 		//for each batch
-		for (u64 stepIdx = binStart; stepIdx < binEnd; stepIdx += stepSize)
+		for (u64 k = 0; k < 3; k++)
 		{
-			// compute the size of current step & end index.
-			auto currentStepSize = std::min(stepSize, binEnd - stepIdx);
-			auto stepEnd = stepIdx + currentStepSize;
-
-			// make a buffer for the pseudo-code we need to send
-			std::unique_ptr<ByteStream> buff(new ByteStream());
-			buff->resize((sizeof(blockBop)*currentStepSize));
-			auto myOt = buff->getArrayView<blockBop>();
-
-			// for each bin, do encoding
-			for (u64 bIdx = stepIdx, i = 0; bIdx < stepEnd; bIdx++, ++i)
+			std::vector<u64> &bins = hashIdx ? (hashIdx == 1 ? mBins1 : mBins2) : mBins0;
+			for (u64 stepIdx = binStart; stepIdx < binEnd; stepIdx += stepSize)
 			{
-				auto& item = mBins.mBins[bIdx];
-				block mask(ZeroBlock);
+				// compute the size of current step & end index.
+				auto currentStepSize = std::min(stepSize, binEnd - stepIdx);
+				auto stepEnd = stepIdx + currentStepSize;
 
-				if (item.isEmpty() == false)
+				// make a buffer for the pseudo-code we need to send
+				std::unique_ptr<ByteStream> buff(new ByteStream());
+				buff->resize((sizeof(blockBop) * currentStepSize));
+				auto myOt = buff->getArrayView<blockBop>();
+
+				// for each bin, do encoding
+				for (u64 bIdx = stepIdx, i = 0; bIdx < stepEnd; bIdx++, ++i)
 				{
-					codeWord.elem[0] = aesHashBuffs[0][item.mIdx];
-					codeWord.elem[1] = aesHashBuffs[1][item.mIdx];
-					codeWord.elem[2] = aesHashBuffs[2][item.mIdx];
-					codeWord.elem[3] = aesHashBuffs[3][item.mIdx];
+					auto &item = bins[bIdx];
+					block mask(ZeroBlock);
 
-					// encoding will send to the sender.
-					myOt[i] =
-						codeWord
-						^ mSSOtMessages[bIdx][0]
-						^ mSSOtMessages[bIdx][1];
+					if (item.isEmpty() == false)
+					{
+						codeWord.elem[0] = aesHashBuffs[0][item.mIdx];
+						codeWord.elem[1] = aesHashBuffs[1][item.mIdx];
+						codeWord.elem[2] = aesHashBuffs[2][item.mIdx];
+						codeWord.elem[3] = aesHashBuffs[3][item.mIdx];
 
+						// encoding will send to the sender.
+						myOt[i] =
+							codeWord ^ mSSOtMessages[bIdx][0] ^ mSSOtMessages[bIdx][1];
 
-					//compute my mask
-					sha1.Reset();
-					sha1.Update((u8*)&item.mHashIdx, sizeof(u64)); //
-					sha1.Update((u8*)&mSSOtMessages[bIdx][0], codeWordSize);
-					sha1.Final(hashBuff);
+						//compute my mask
+						sha1.Reset();
+						sha1.Update((u8 *)&item.mHashIdx, sizeof(u64)); //
+						sha1.Update((u8 *)&mSSOtMessages[bIdx][0], codeWordSize);
+						sha1.Final(hashBuff);
 
+						// store the my mask value here
+						memcpy(&mask, hashBuff, maskSize);
 
-					// store the my mask value here					
-					memcpy(&mask, hashBuff, maskSize);
-
-					//store my mask into corresponding buff at the permuted position
-					localMasks[item.mHashIdx].emplace(*(u64*)&mask, std::pair<block, u64>(mask, item.mIdx));
-
+						//store my mask into corresponding buff at the permuted position
+						localMasks[k].emplace(*(u64 *)&mask, std::pair<block, u64>(mask, item.mIdx));
+					}
+					else
+					{
+						// no item for this bin, just use a dummy.
+						myOt[i] = prng.get_block512(codeWordSize);
+					}
 				}
-				else
-				{
-					// no item for this bin, just use a dummy.
-					myOt[i] = prng.get_block512(codeWordSize);
-				}
-			}
-			// send the OT correction masks for the current step
-			chl.asyncSend(std::move(buff));
-		}// Done with compute the masks for the main set of bins. 		 
+				// send the OT correction masks for the current step
+				chl.asyncSend(std::move(buff));
+			} // Done with compute the masks for the main set of bins.
+		}
 		gTimer.setTimePoint("R Online.sendBucketMask done");
 
 		//receive the sender's marks, we have 3 buffs that corresponding to the mask of elements used hash index 0,1,2
@@ -251,8 +241,8 @@ namespace bOPRF
 			ByteStream recvBuff;
 			chl.recv(recvBuff);
 
-			// double check the size. 
-			if (recvBuff.size() != mSenderSize* maskSize)
+			// double check the size.
+			if (recvBuff.size() != mSenderSize * maskSize)
 			{
 				Log::out << "recvBuff.size() != expectedSize" << Log::endl;
 				throw std::runtime_error("rt error at " LOCATION);
@@ -266,7 +256,7 @@ namespace bOPRF
 				//if masksize>=8, we can check 64 bits of key from the map first
 				for (u64 i = 0; i < mSenderSize; ++i)
 				{
-					auto& msk = *(u64*)(theirMasks);
+					auto &msk = *(u64 *)(theirMasks);
 
 					// check 64 first bits
 					auto match = localMasks[buffIdx].find(msk);
@@ -303,14 +293,14 @@ namespace bOPRF
 
 		//======================STASH BIN==========================
 		std::unique_ptr<ByteStream> stashBuff(new ByteStream());
-		stashBuff->resize((sizeof(blockBop)*mBins.mStash.size()));
+		stashBuff->resize((sizeof(blockBop) * mBins.mStash.size()));
 		auto myOt = stashBuff->getArrayView<blockBop>();
 
 		gTimer.setTimePoint("R Online.Stash start");
 		// compute the encoding for each item in the stash.
 		for (u64 i = 0, otIdx = mBins.mBinCount; i < mBins.mStash.size(); ++i, ++otIdx)
 		{
-			auto& item = mBins.mStash[i];
+			auto &item = mBins.mStash[i];
 			block mask(ZeroBlock);
 
 			if (item.isEmpty() == false)
@@ -321,14 +311,12 @@ namespace bOPRF
 				codeWord.elem[3] = aesHashBuffs[3][item.mIdx];
 
 				myOt[i] =
-					codeWord
-					^ mSSOtMessages[otIdx][0]
-					^ mSSOtMessages[otIdx][1];
+					codeWord ^ mSSOtMessages[otIdx][0] ^ mSSOtMessages[otIdx][1];
 
 				sha1.Reset();
-				sha1.Update((u8*)&mSSOtMessages[otIdx][0], codeWordSize);
+				sha1.Update((u8 *)&mSSOtMessages[otIdx][0], codeWordSize);
 				sha1.Final(hashBuff);
-				
+
 				memcpy(locaStashlMasks->data() + i * maskSize, hashBuff, maskSize);
 			}
 			else
@@ -345,33 +333,33 @@ namespace bOPRF
 		{
 			ByteStream recvBuff;
 			chl.recv(recvBuff);
-			if (mBins.mStash[sBuffIdx].isEmpty()== false)
+			if (mBins.mStash[sBuffIdx].isEmpty() == false)
 			{
 				// double check the size.
 				auto cntMask = mSenderSize;
 				gTimer.setTimePoint("Online.MaskReceived from STASH");
-				if (recvBuff.size() != cntMask* maskSize)
+				if (recvBuff.size() != cntMask * maskSize)
 				{
 					Log::out << "recvBuff.size() != expectedSize" << Log::endl;
 					throw std::runtime_error("rt error at " LOCATION);
 				}
 
 				auto theirMasks = recvBuff.data();
-					for (u64 i = 0; i < cntMask; ++i)
+				for (u64 i = 0; i < cntMask; ++i)
+				{
+					//check stash
+					if (memcmp(theirMasks, locaStashlMasks->data() + sBuffIdx * maskSize, maskSize) == 0)
 					{
-						//check stash
-							if (memcmp(theirMasks, locaStashlMasks->data()+ sBuffIdx*maskSize, maskSize) == 0) 
-							{
-								mIntersection.push_back(mBins.mStash[sBuffIdx].mIdx);
-								//Log::out << "#id: " << match->second.second << Log::endl;
-							}
-						
-						theirMasks += maskSize;
-					}				
+						mIntersection.push_back(mBins.mStash[sBuffIdx].mIdx);
+						//Log::out << "#id: " << match->second.second << Log::endl;
+					}
+
+					theirMasks += maskSize;
+				}
 			}
 		}
 
-	gTimer.setTimePoint("Online.Done");
-	//	Log::out << gTimer << Log::endl;
-}
+		gTimer.setTimePoint("Online.Done");
+		//	Log::out << gTimer << Log::endl;
+	}
 }

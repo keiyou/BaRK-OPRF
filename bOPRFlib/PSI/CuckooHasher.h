@@ -4,45 +4,25 @@
 #include "Common/ArrayView.h"
 
 namespace bOPRF
-{	
+{
 	class CuckooHasher
 	{
 	public:
 		CuckooHasher();
 		~CuckooHasher();
 
-		struct Bin
-		{
-			Bin()
-				:mIdx(-1),
-				mHashIdx(0)
-			{}
-
-			Bin(u64 i, u64 v)
-				: mIdx(i)
-				, mHashIdx(v) {}
-
-			u64 mIdx;
-			u64 mHashIdx;
-
-
-			bool isEmpty() const
-			{
-				return mIdx == u64(-1);
-			}
-		}; 
-
-
 		u64 mBinCount, mCuckooSize, mSimpleSize, mMaxStashSize, mSendersMaxBinSize, mTotalTries;
 
-		std::vector<Bin> mBins;
-		std::vector<Bin> mStash;
-		
+		std::vector<u64> mBins0;
+		std::vector<u64> mBins1;
+		std::vector<u64> mBins2;
+		std::vector<u64> mStash;
+
 		void print() const;
 
 		void init(u64 cuckooSize, u64 simpleSize);
-		void insertItem(u64 IdxItem, std::array<std::vector<block>, 4>& hashs, u64 hashIdx = 0, u64 numTries = 0);
-		void insertItems(std::array<std::vector<block>,4>& hashs);
+		void insertItem(u64 IdxItem, std::array<std::vector<block>, 4> &hashs, u64 hashIdx = 0, u64 numTries = 0);
+		void insertItems(std::array<std::vector<block>, 4> &hashs);
 	};
 
 }

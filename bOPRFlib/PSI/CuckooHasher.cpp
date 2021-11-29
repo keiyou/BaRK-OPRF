@@ -8,9 +8,8 @@
 namespace bOPRF
 {
 
-
 	CuckooHasher::CuckooHasher()
-		:mTotalTries(0)
+		: mTotalTries(0)
 	{
 	}
 
@@ -24,12 +23,11 @@ namespace bOPRF
 		Log::out << Log::lock;
 		Log::out << "Cuckoo Hasher  " << Log::endl;
 
-
-		for (u64 i = 0; i < mBins.size(); ++i)
+		for (u64 i = 0; i < mBins0.size(); ++i)
 		{
-			Log::out << "Bin #" << i << Log::endl;
+			Log::out << "Bin #0-" << i << Log::endl;
 
-			if (mBins[i].isEmpty())
+			if (mBins0[i] == -1)
 			{
 
 				Log::out << " contains 0 elements\n";
@@ -37,11 +35,41 @@ namespace bOPRF
 			else
 			{
 				Log::out << " contains 0 elements\n"
-					<< "    c_idx=" << mBins[i].mIdx << "  hIdx=" << mBins[i].mHashIdx << "\n";
-
+						 << "    c_idx=" << mBins0[i] << "  hIdx=" << 0 << "\n";
 			}
 			Log::out << Log::endl;
+		}
+		for (u64 i = 0; i < mBins1.size(); ++i)
+		{
+			Log::out << "Bin #1-" << i << Log::endl;
 
+			if (mBins1[i] == -1)
+			{
+
+				Log::out << " contains 0 elements\n";
+			}
+			else
+			{
+				Log::out << " contains 0 elements\n"
+						 << "    c_idx=" << mBins1[i] << "  hIdx=" << 1 << "\n";
+			}
+			Log::out << Log::endl;
+		}
+		for (u64 i = 0; i < mBins2.size(); ++i)
+		{
+			Log::out << "Bin #2-" << i << Log::endl;
+
+			if (mBins2[i] == -1)
+			{
+
+				Log::out << " contains 0 elements\n";
+			}
+			else
+			{
+				Log::out << " contains 0 elements\n"
+						 << "    c_idx=" << mBins2[i] << "  hIdx=" << 2 << "\n";
+			}
+			Log::out << Log::endl;
 		}
 		Log::out << Log::endl;
 		Log::out << Log::unlock;
@@ -51,38 +79,39 @@ namespace bOPRF
 	{
 		mCuckooSize = cuckooSize;
 		mSimpleSize = simpleSize;
-		mBinCount = 1.2*cuckooSize;
+		mBinCount = 1.2 * cuckooSize;
 		mMaxStashSize = get_stash_size(cuckooSize);
 		mSendersMaxBinSize = get_bin_size(mBinCount, simpleSize * 3, 40);
-		mBins.resize(mBinCount);
+		mBins0.resize(mBinCount / 3);
+		mBins1.resize(mBinCount / 3);
+		mBins2.resize(mBinCount / 3);
 	}
 
-	void CuckooHasher::insertItem(u64 IdxItem, std::array<std::vector<block>, 4>& hashs, u64 hashIdx, u64 numTries)
-	{ 
+	void CuckooHasher::insertItem(u64 IdxItem, std::array<std::vector<block>, 4> &hashs, u64 hashIdx, u64 numTries)
+	{
 		++mTotalTries;
 
-		u64& xrHashVal = *(u64*)&hashs[hashIdx][IdxItem];
+		u64 &xrHashVal = *(u64 *)&hashs[hashIdx][IdxItem];
 
 		auto addr = (xrHashVal) % mBinCount;
 
+		std::vector<u64> &bins = hashIdx ? (hashIdx == 1 ? mBins1 : mBins2) : mBins0;
 
-		if (mBins[addr].isEmpty())
+		if (bins[addr].isEmpty())
 		{
 			// empty, place it here.
-			mBins[addr].mIdx = IdxItem; 
-			mBins[addr].mHashIdx = hashIdx;
-
+			bins[addr].mIdx = IdxItem;
+			bins[addr].mHashIdx = hashIdx;
 		}
-		else if(numTries <mCuckooSize) 
+		else if (numTries < mCuckooSize)
 		{
-			// mN times => evict  
-			u64 evictIdx = mBins[addr].mIdx;
-			u64 idxHash = mBins[addr].mHashIdx;
+			// mN times => evict
+			u64 evictIdx = bins[addr].mIdx;
+			u64 idxHash = bins[addr].mHashIdx;
 
+			bins[addr].mIdx = IdxItem;
+			bins[addr].mHashIdx = hashIdx;
 
-			mBins[addr].mIdx= IdxItem;
-			mBins[addr].mHashIdx = hashIdx;
-			
 			// increments tries, %3 we use only 3 hash functions!
 			insertItem(evictIdx, hashs, (idxHash + 1) % 3, numTries + 1);
 		}
@@ -90,17 +119,17 @@ namespace bOPRF
 		{
 			// put in stash
 			//hashIdx = 2; //assign the hash Idx be 2
-			mStash.emplace_back(IdxItem, hashIdx);
+			mStash.emplace_back(IdxItem);
 		}
 	}
-	void CuckooHasher::insertItems(std::array<std::vector<block>, 4>& hashs)
+	void CuckooHasher::insertItems(std::array<std::vector<block>, 4> &hashs)
 	{
 		for (u64 i = 0; i < hashs[0].size(); ++i)
 		{
-			insertItem(i,hashs);
+			insertItem(i, hashs);
 		}
 
-//		Log::out << "#Stash size " << mStash.size() << Log::endl;
+		//		Log::out << "#Stash size " << mStash.size() << Log::endl;
 
 		mStash.resize(mMaxStashSize);
 	}
