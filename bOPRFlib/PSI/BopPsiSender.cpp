@@ -124,12 +124,12 @@ namespace bOPRF
 		// myMaskBuff3->resize(mSenderSize * maskSize);
 
 		//create permute array to add my mask in the permuted positions
-		std::array<std::vector<u64>, 3> permute;
-		int idxPermuteDone[3];
-		for (u64 j = 0; j < 3; j++)
+		std::array<std::vector<u64>, 2> permute;
+		int idxPermuteDone[2];
+		for (u64 j = 0; j < 2; j++)
 		{
-			permute[j].resize(mSenderSize);
-			for (u64 i = 0; i < mSenderSize; i++)
+			permute[j].resize(mSenderSize * 2);
+			for (u64 i = 0; i < mSenderSize * 2; i++)
 			{
 				permute[j][i] = i;
 			}
