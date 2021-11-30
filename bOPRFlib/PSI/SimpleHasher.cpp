@@ -51,7 +51,7 @@ namespace bOPRF
 
 		mSimpleSize = simpleSize;
 		mCuckooSize = cuckooSize;
-		mBinCount = 0.7 * cuckooSize;
+		mBinCount = 0.6 * cuckooSize;
 		mMaxBinSize = get_bin_size(mBinCount, simpleSize * numHashFunction, statSecParam);
 		mBins.resize(mBinCount, mMaxBinSize);
 		mBinSizes.resize(mBinCount, 0);

@@ -41,7 +41,7 @@ namespace bOPRF
 		// init Simple hash
 		mBins.init(mRecverSize, mSenderSize);
 
-		mPsiRecvSSOtMessages.resize(mBins.mBinCount + mNumStash);
+		mPsiRecvSSOtMessages.resize(mBins.mBinCount * 2 + mNumStash);
 
 		//do base OT
 		if (otSend.hasBaseSSOts() == false)
@@ -58,7 +58,7 @@ namespace bOPRF
 
 		mHashingSeed = myHashSeeds ^ theirHashingSeeds;
 
-		otSend.Extend(mBins.mBinCount + mNumStash, mPsiRecvSSOtMessages, chl0);
+		otSend.Extend(mBins.mBinCount * 2 + mNumStash, mPsiRecvSSOtMessages, chl0);
 		//gTimer.setTimePoint("s InitS.extFinished");
 	}
 
@@ -177,7 +177,7 @@ namespace bOPRF
 						codeWord.elem[2] = aesHashBuffs[2][bin[i].mIdx];
 						codeWord.elem[3] = aesHashBuffs[3][bin[i].mIdx];
 
-						auto sum = mPsiRecvSSOtMessages[bIdx] ^ ((theirCorrOT[j] ^ codeWord) & blk448Choice);
+						auto sum = mPsiRecvSSOtMessages[k * mBins.mBinCount + bIdx] ^ ((theirCorrOT[j] ^ codeWord) & blk448Choice);
 
 						sha1.Reset();
 						sha1.Update((u8 *)&bin[i].mHashIdx, sizeof(u64)); //add hash index
@@ -219,7 +219,7 @@ namespace bOPRF
 			throw std::runtime_error("rt error at " LOCATION);
 
 		// now compute mask for each of the stash elements
-		for (u64 stashIdx = 0, otIdx = mBins.mBinCount; stashIdx < mNumStash; ++stashIdx, ++otIdx)
+		for (u64 stashIdx = 0, otIdx = mBins.mBinCount * 2; stashIdx < mNumStash; ++stashIdx, ++otIdx)
 		{
 			std::unique_ptr<ByteStream> myStashMasksBuff(new ByteStream());
 			myStashMasksBuff->resize(mSenderSize * maskSize);

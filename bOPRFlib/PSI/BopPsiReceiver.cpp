@@ -66,7 +66,7 @@ namespace bOPRF
 		mBins.init(mRecverSize, mSenderSize);
 
 		// makes codeword for each bins
-		mSSOtMessages.resize(mBins.mBinCount + mNumStash);
+		mSSOtMessages.resize(mBins.mBinCount * 2 + mNumStash);
 
 		//do base OT
 		if (otRecv.hasBaseSSOts() == false)
@@ -85,8 +85,8 @@ namespace bOPRF
 		mHashingSeed = myHashSeeds ^ theirHashingSeeds;
 
 		//gTimer.setTimePoint("Init.ExtStart");
-		//extend OT
-		otRecv.Extend(mBins.mBinCount + mNumStash, mSSOtMessages, chl0);
+		//extend O
+		otRecv.Extend(mBins.mBinCount * 2 + mNumStash, mSSOtMessages, chl0);
 
 		//gTimer.setTimePoint("r Init.Done");
 		//	Log::out << gTimer;
@@ -98,7 +98,7 @@ namespace bOPRF
 	}
 
 	struct has_const_member
-	{ 
+	{
 		const bool x;
 
 		has_const_member(bool x_)
@@ -160,7 +160,7 @@ namespace bOPRF
 
 		//we use 4 unordered_maps, we put the mask to the corresponding unordered_map
 		//that indicates of the hash function index 0,1,2. and the last unordered_maps is used for stash bin
-		std::array<std::unordered_map<u64, std::pair<block, u64> >, 2> localMasks;
+		std::array<std::unordered_map<u64, std::pair<block, u64>>, 2> localMasks;
 		// //store the masks of elements that map to bin by h0
 		// localMasks[0].reserve(mBins.mBinCount); //upper bound of # mask
 		// //store the masks of elements that map to bin by h1
@@ -186,6 +186,7 @@ namespace bOPRF
 		//for each batch
 		for (u64 k = 0; k < 2; k++)
 		{
+			std::vector<Bin> &mb = k ? mBins.mBins1 : mBins.mBins0;
 			for (u64 stepIdx = binStart; stepIdx < binEnd; stepIdx += stepSize)
 			{
 				// compute the size of current step & end index.
@@ -200,7 +201,7 @@ namespace bOPRF
 				// for each bin, do encoding
 				for (u64 bIdx = stepIdx, i = 0; bIdx < stepEnd; bIdx++, ++i)
 				{
-					auto &item = mBins.mBins[bIdx][k];
+					auto &item = mb[bIdx];
 					block mask(ZeroBlock);
 
 					if (item.isEmpty() == false)
@@ -212,12 +213,12 @@ namespace bOPRF
 
 						// encoding will send to the sender.
 						myOt[i] =
-							codeWord ^ mSSOtMessages[bIdx][0] ^ mSSOtMessages[bIdx][1];
+							codeWord ^ mSSOtMessages[k * mBins.mBinCount + bIdx][0] ^ mSSOtMessages[k * mBins.mBinCount + bIdx][1];
 
 						//compute my mask
 						sha1.Reset();
 						sha1.Update((u8 *)&item.mHashIdx, sizeof(u64)); //
-						sha1.Update((u8 *)&mSSOtMessages[bIdx][0], codeWordSize);
+						sha1.Update((u8 *)&mSSOtMessages[k * mBins.mBinCount + bIdx][0], codeWordSize);
 						sha1.Final(hashBuff);
 
 						// store the my mask value here
@@ -303,7 +304,7 @@ namespace bOPRF
 
 		gTimer.setTimePoint("R Online.Stash start");
 		// compute the encoding for each item in the stash.
-		for (u64 i = 0, otIdx = mBins.mBinCount; i < mBins.mStash.size(); ++i, ++otIdx)
+		for (u64 i = 0, otIdx = mBins.mBinCount * 2; i < mBins.mStash.size(); ++i, ++otIdx)
 		{
 			auto &item = mBins.mStash[i];
 			block mask(ZeroBlock);

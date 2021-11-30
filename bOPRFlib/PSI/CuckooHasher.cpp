@@ -22,23 +22,21 @@ namespace bOPRF
 
 		Log::out << Log::lock;
 		Log::out << "Cuckoo Hasher  " << Log::endl;
-		for (u64 i = 0; i < mBins.size(); ++i)
+		for (u64 i = 0; i < mBins0.size(); ++i)
 		{
 			Log::out << "Bin #" << i << Log::endl;
-			for (u64 j = 0; j < mBins[i].size(); ++j)
-			{
-				if (mBins[i][j].isEmpty())
-				{
 
-					Log::out << " contains 0 elements\n";
-				}
-				else
-				{
-					Log::out << " contains 0 elements\n"
-							 << "    c_idx=" << mBins[i][j].mIdx << "  hIdx=" << mBins[i][j].mHashIdx << "\n";
-				}
-				Log::out << Log::endl;
+			if (mBins0[i].isEmpty())
+			{
+
+				Log::out << " contains 0 elements\n";
 			}
+			else
+			{
+				Log::out << " contains 0 elements\n"
+						 << "    c_idx=" << mBins0[i].mIdx << "  hIdx=" << mBins0[i].mHashIdx << "\n";
+			}
+			Log::out << Log::endl;
 		}
 		Log::out << Log::endl;
 		Log::out << Log::unlock;
@@ -49,11 +47,12 @@ namespace bOPRF
 		mCuckooSize = cuckooSize;
 		mSimpleSize = simpleSize;
 		// mBinCount = 1.2 * cuckooSize;
-		mBinCount = 0.7 * cuckooSize;
+		mBinCount = 0.6 * cuckooSize;
 		mMaxStashSize = get_stash_size(cuckooSize);
-		mSendersMaxBinSize = get_bin_size(mBinCount, simpleSize * 3, 40);
+		mSendersMaxBinSize = get_bin_size(mBinCount, simpleSize * 2, 40);
 		// mBins.resize(mBinCount);
-		mBins.resize(mBinCount, std::vector<Bucket>(2));
+		mBins0.resize(mBinCount);
+		mBins1.resize(mBinCount);
 		lastEvicted.resize(mBinCount, 0);
 	}
 
@@ -68,20 +67,22 @@ namespace bOPRF
 		u64 i = lastEvicted[addr];
 		lastEvicted[addr] = (i + 1) % 2;
 
-		if (mBins[addr][i].isEmpty())
+		std::vector<Bin> &mBins = i ? mBins1 : mBins0;
+
+		if (mBins[addr].isEmpty())
 		{
 			// empty, place it here.
-			mBins[addr][i].mIdx = IdxItem;
-			mBins[addr][i].mHashIdx = hashIdx;
+			mBins[addr].mIdx = IdxItem;
+			mBins[addr].mHashIdx = hashIdx;
 		}
 		else if (numTries < mCuckooSize)
 		{
 			// mN times => evict
-			u64 evictIdx = mBins[addr][i].mIdx;
-			u64 idxHash = mBins[addr][i].mHashIdx;
+			u64 evictIdx = mBins[addr].mIdx;
+			u64 idxHash = mBins[addr].mHashIdx;
 
-			mBins[addr][i].mIdx = IdxItem;
-			mBins[addr][i].mHashIdx = hashIdx;
+			mBins[addr].mIdx = IdxItem;
+			mBins[addr].mHashIdx = hashIdx;
 
 			// increments tries, %3 we use only 3 hash functions!
 			// insertItem(evictIdx, hashs, (idxHash + 1) % 3, numTries + 1);

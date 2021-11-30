@@ -5,39 +5,39 @@
 
 namespace bOPRF
 {
+
+	struct Bin
+	{
+		Bin()
+			: mIdx(-1),
+			  mHashIdx(0)
+		{
+		}
+
+		Bin(u64 i, u64 v)
+			: mIdx(i), mHashIdx(v) {}
+
+		u64 mIdx;
+		u64 mHashIdx;
+
+		bool isEmpty() const
+		{
+			return mIdx == u64(-1);
+		}
+	};
+
 	class CuckooHasher
 	{
 	public:
 		CuckooHasher();
 		~CuckooHasher();
 
-		struct Bucket
-		{
-			Bucket()
-				: mIdx(-1),
-				  mHashIdx(0)
-			{
-			}
-
-			Bucket(u64 i, u64 v)
-				: mIdx(i), mHashIdx(v) {}
-
-			u64 mIdx;
-			u64 mHashIdx;
-
-			bool isEmpty() const
-			{
-				return mIdx == u64(-1);
-			}
-		};
-
-		typedef std::vector<Bucket> Bin;
-
 		u64 mBinCount, mCuckooSize, mSimpleSize, mMaxStashSize, mSendersMaxBinSize, mTotalTries;
 
-		std::vector<Bin> mBins;
+		std::vector<Bin> mBins0;
+		std::vector<Bin> mBins1;
 		std::vector<u64> lastEvicted;
-		std::vector<Bucket> mStash;
+		std::vector<Bin> mStash;
 
 		void print() const;
 
