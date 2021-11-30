@@ -143,7 +143,7 @@ void BopSender(string ipAddressPort)
 	//pingTest(*sendChls[0], true);
 
 
-		for (u64 pow : { 8, 12, 16, 20, 24})
+		for (u64 pow : { 8, 12, 16, 20})
 	{
 		u64 senderSize = (1 << pow), psiSecParam = 40;
 		u64 recverSize = senderSize; //for psi of diffirent set size, you can set receiver'set size here 
@@ -234,7 +234,7 @@ void BopRecv(string ipAddressPort)
 	std::cout << "--------------------------\n";
 
 
-	for (u64 pow : { 8,12,16,20,24 })
+	for (u64 pow : { 8,12,16,20 })
 	{
 		u64 senderSize = (1 << pow), psiSecParam = 40;
 		u64 recverSize = senderSize; //for psi of diffirent set size, you can set receiver'set size here 
