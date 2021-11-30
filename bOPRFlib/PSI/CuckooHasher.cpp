@@ -67,21 +67,20 @@ namespace bOPRF
 
 		auto addr = (xrHashVal) % mBinCount;
 
-		Bin &curBin = mBins[addr];
 		u64 i = lastEvicted[addr];
 		lastEvicted[addr] = (i + 1) % mBinCount;
 
-		if (curBin[i].isEmpty())
+		if (mBins[addr][i].isEmpty())
 		{
 			// empty, place it here.
-			curBin[i].mIdx = IdxItem;
-			curBin[i].mHashIdx = hashIdx;
+			mBins[addr][i].mIdx = IdxItem;
+			mBins[addr][i].mHashIdx = hashIdx;
 		}
 		else if (numTries < mCuckooSize)
 		{
 			// mN times => evict
-			u64 evictIdx = curBin[i].mIdx;
-			u64 idxHash = curBin[i].mHashIdx;
+			u64 evictIdx = mBins[addr][i].mIdx;
+			u64 idxHash = mBins[addr][i].mHashIdx;
 
 			mBins[addr][i].mIdx = IdxItem;
 			mBins[addr][i].mHashIdx = hashIdx;
