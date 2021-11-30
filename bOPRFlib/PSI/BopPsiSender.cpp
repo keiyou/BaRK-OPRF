@@ -158,7 +158,7 @@ namespace bOPRF
 				chl.recv(theirCorrOTMasksBuff);
 
 				// check the size
-				if (theirCorrOTMasksBuff.size() != sizeof(blockBop) * currentStepSize * 2)
+				if (theirCorrOTMasksBuff.size() != sizeof(blockBop) * currentStepSize)
 					throw std::runtime_error("rt error at " LOCATION);
 
 				auto theirCorrOT = theirCorrOTMasksBuff.getArrayView<blockBop>();

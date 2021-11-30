@@ -98,7 +98,7 @@ namespace bOPRF
 	}
 
 	struct has_const_member
-	{
+	{ 
 		const bool x;
 
 		has_const_member(bool x_)

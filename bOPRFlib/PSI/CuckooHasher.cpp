@@ -22,14 +22,12 @@ namespace bOPRF
 
 		Log::out << Log::lock;
 		Log::out << "Cuckoo Hasher  " << Log::endl;
-
 		for (u64 i = 0; i < mBins.size(); ++i)
 		{
 			Log::out << "Bin #" << i << Log::endl;
-			Bin &curBin = mBins[i];
-			for (u64 j = 0; j < curBin.size(); ++j)
+			for (u64 j = 0; j < mBins[i].size(); ++j)
 			{
-				if (curBin[j].isEmpty())
+				if (mBins[i][j].isEmpty())
 				{
 
 					Log::out << " contains 0 elements\n";
@@ -37,7 +35,7 @@ namespace bOPRF
 				else
 				{
 					Log::out << " contains 0 elements\n"
-							 << "    c_idx=" << curBin[j].mIdx << "  hIdx=" << curBin[j].mHashIdx << "\n";
+							 << "    c_idx=" << mBins[i][j].mIdx << "  hIdx=" << mBins[i][j].mHashIdx << "\n";
 				}
 				Log::out << Log::endl;
 			}
@@ -68,7 +66,7 @@ namespace bOPRF
 		auto addr = (xrHashVal) % mBinCount;
 
 		u64 i = lastEvicted[addr];
-		lastEvicted[addr] = (i + 1) % mBinCount;
+		lastEvicted[addr] = (i + 1) % 2;
 
 		if (mBins[addr][i].isEmpty())
 		{
