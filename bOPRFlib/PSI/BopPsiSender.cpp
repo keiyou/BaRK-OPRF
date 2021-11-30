@@ -24,7 +24,7 @@ namespace bOPRF
 	void BopPsiSender::init(u64 senderSize, u64 recverSize, u64 statSec, const std::vector<Channel *> &chls, SSOtExtSender &otSend, block seed)
 	{
 		mStatSecParam = statSec;
-		mSenderSize = senderSize;
+		mSenderSize = senderSize * 3;
 		mRecverSize = recverSize;
 		mNumStash = get_stash_size(recverSize);
 
@@ -69,7 +69,7 @@ namespace bOPRF
 
 	void BopPsiSender::sendInput(std::vector<block> &inputs, const std::vector<Channel *> &chls)
 	{
-		if (inputs.size() != mSenderSize)
+		if (inputs.size() * 3 != mSenderSize)
 			throw std::runtime_error("rt error at " LOCATION);
 
 		//gTimer.setTimePoint("OnlineS.start");
@@ -142,7 +142,7 @@ namespace bOPRF
 		TODO("run in parallel");
 		auto binStart = 0;
 		auto binEnd = mBins.mBinCount / 3;
-
+		auto tableSize = mBins.mBinCount / 3;
 		gTimer.setTimePoint("S Online.computeBucketMask start");
 		//for each batch
 		for (u64 k = 0; k < 3; k++)
@@ -177,7 +177,7 @@ namespace bOPRF
 						codeWord.elem[2] = aesHashBuffs[2][bin[i].mIdx];
 						codeWord.elem[3] = aesHashBuffs[3][bin[i].mIdx];
 
-						auto sum = mPsiRecvSSOtMessages[bIdx] ^ ((theirCorrOT[j] ^ codeWord) & blk448Choice);
+						auto sum = mPsiRecvSSOtMessages[bIdx + k * tableSize] ^ ((theirCorrOT[j] ^ codeWord) & blk448Choice);
 
 						sha1.Reset();
 						sha1.Update((u8 *)&bin[i].mHashIdx, sizeof(u64)); //add hash index

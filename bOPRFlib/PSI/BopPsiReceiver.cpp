@@ -44,7 +44,7 @@ namespace bOPRF
 	{
 
 		mStatSecParam = statSecParam;
-		mSenderSize = senderSize;
+		mSenderSize = senderSize * 3;
 		mRecverSize = recverSize;
 
 		mNumStash = get_stash_size(recverSize);
@@ -161,7 +161,7 @@ namespace bOPRF
 
 		//we use 4 unordered_maps, we put the mask to the corresponding unordered_map
 		//that indicates of the hash function index 0,1,2. and the last unordered_maps is used for stash bin
-		std::array<std::unordered_map<u64, std::pair<block, u64> >, 3> localMasks;
+		std::array<std::unordered_map<u64, std::pair<block, u64>>, 3> localMasks;
 		//store the masks of elements that map to bin by h0
 		localMasks[0].reserve(mBins.mBinCount); //upper bound of # mask
 		//store the masks of elements that map to bin by h1
@@ -178,11 +178,13 @@ namespace bOPRF
 		TODO("run in parallel");
 		auto binStart = 0;
 		auto binEnd = mBins.mBinCount / 3;
+		auto tableSize = mBins.mBinCount / 3;
+
 		gTimer.setTimePoint("R Online.computeBucketMask start");
 		//for each batch
 		for (u64 k = 0; k < 3; k++)
 		{
-			std::vector<u64> &bins = hashIdx ? (hashIdx == 1 ? mBins1 : mBins2) : mBins0;
+			std::vector<u64> &bins = k ? (k == 1 ? mBins.mBins1 : mBins.mBins2) : mBins.mBins0;
 			for (u64 stepIdx = binStart; stepIdx < binEnd; stepIdx += stepSize)
 			{
 				// compute the size of current step & end index.
@@ -200,28 +202,28 @@ namespace bOPRF
 					auto &item = bins[bIdx];
 					block mask(ZeroBlock);
 
-					if (item.isEmpty() == false)
+					if (item != -1)
 					{
-						codeWord.elem[0] = aesHashBuffs[0][item.mIdx];
-						codeWord.elem[1] = aesHashBuffs[1][item.mIdx];
-						codeWord.elem[2] = aesHashBuffs[2][item.mIdx];
-						codeWord.elem[3] = aesHashBuffs[3][item.mIdx];
+						codeWord.elem[0] = aesHashBuffs[0][item];
+						codeWord.elem[1] = aesHashBuffs[1][item];
+						codeWord.elem[2] = aesHashBuffs[2][item];
+						codeWord.elem[3] = aesHashBuffs[3][item];
 
 						// encoding will send to the sender.
 						myOt[i] =
-							codeWord ^ mSSOtMessages[bIdx][0] ^ mSSOtMessages[bIdx][1];
+							codeWord ^ mSSOtMessages[bIdx + k * tableSize][0] ^ mSSOtMessages[bIdx + k * tableSize][1];
 
 						//compute my mask
 						sha1.Reset();
-						sha1.Update((u8 *)&item.mHashIdx, sizeof(u64)); //
-						sha1.Update((u8 *)&mSSOtMessages[bIdx][0], codeWordSize);
+						sha1.Update((u8 *)&k, sizeof(u64)); //
+						sha1.Update((u8 *)&mSSOtMessages[bIdx + k * tableSize][0], codeWordSize);
 						sha1.Final(hashBuff);
 
 						// store the my mask value here
 						memcpy(&mask, hashBuff, maskSize);
 
 						//store my mask into corresponding buff at the permuted position
-						localMasks[k].emplace(*(u64 *)&mask, std::pair<block, u64>(mask, item.mIdx));
+						localMasks[k].emplace(*(u64 *)&mask, std::pair<block, u64>(mask, k));
 					}
 					else
 					{
@@ -303,12 +305,12 @@ namespace bOPRF
 			auto &item = mBins.mStash[i];
 			block mask(ZeroBlock);
 
-			if (item.isEmpty() == false)
+			if (item != -1)
 			{
-				codeWord.elem[0] = aesHashBuffs[0][item.mIdx];
-				codeWord.elem[1] = aesHashBuffs[1][item.mIdx];
-				codeWord.elem[2] = aesHashBuffs[2][item.mIdx];
-				codeWord.elem[3] = aesHashBuffs[3][item.mIdx];
+				codeWord.elem[0] = aesHashBuffs[0][item];
+				codeWord.elem[1] = aesHashBuffs[1][item];
+				codeWord.elem[2] = aesHashBuffs[2][item];
+				codeWord.elem[3] = aesHashBuffs[3][item];
 
 				myOt[i] =
 					codeWord ^ mSSOtMessages[otIdx][0] ^ mSSOtMessages[otIdx][1];
@@ -333,7 +335,7 @@ namespace bOPRF
 		{
 			ByteStream recvBuff;
 			chl.recv(recvBuff);
-			if (mBins.mStash[sBuffIdx].isEmpty() == false)
+			if (mBins.mStash[sBuffIdx] != -1)
 			{
 				// double check the size.
 				auto cntMask = mSenderSize;
@@ -350,7 +352,7 @@ namespace bOPRF
 					//check stash
 					if (memcmp(theirMasks, locaStashlMasks->data() + sBuffIdx * maskSize, maskSize) == 0)
 					{
-						mIntersection.push_back(mBins.mStash[sBuffIdx].mIdx);
+						mIntersection.push_back(mBins.mStash[sBuffIdx]);
 						//Log::out << "#id: " << match->second.second << Log::endl;
 					}
 

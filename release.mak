@@ -18,7 +18,7 @@ LINUX_PACKAGES :=
 
 CXXFLAGS := -ggdb -ffunction-sections -O3 -Wall -std=c++11 -maes -msse2 -msse4.1 -mpclmul -Wfatal-errors -pthread -Wno-narrowing
 LDFLAGS := -Wl,-gc-sections -pthread  
-COMMONFLAGS := 
+COMMONFLAGS := -fPIC -no-pie
 
 START_GROUP := -Wl,--start-group
 END_GROUP := -Wl,--end-group

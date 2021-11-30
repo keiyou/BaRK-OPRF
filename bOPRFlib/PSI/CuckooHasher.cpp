@@ -82,9 +82,9 @@ namespace bOPRF
 		mBinCount = 1.2 * cuckooSize;
 		mMaxStashSize = get_stash_size(cuckooSize);
 		mSendersMaxBinSize = get_bin_size(mBinCount, simpleSize * 3, 40);
-		mBins0.resize(mBinCount / 3);
-		mBins1.resize(mBinCount / 3);
-		mBins2.resize(mBinCount / 3);
+		mBins0.resize(mBinCount / 3, -1);
+		mBins1.resize(mBinCount / 3, -1);
+		mBins2.resize(mBinCount / 3, -1);
 	}
 
 	void CuckooHasher::insertItem(u64 IdxItem, std::array<std::vector<block>, 4> &hashs, u64 hashIdx, u64 numTries)
@@ -93,27 +93,23 @@ namespace bOPRF
 
 		u64 &xrHashVal = *(u64 *)&hashs[hashIdx][IdxItem];
 
-		auto addr = (xrHashVal) % mBinCount;
+		auto addr = (xrHashVal) % (mBinCount / 3);
 
 		std::vector<u64> &bins = hashIdx ? (hashIdx == 1 ? mBins1 : mBins2) : mBins0;
 
-		if (bins[addr].isEmpty())
+		if (bins[addr] == -1)
 		{
 			// empty, place it here.
-			bins[addr].mIdx = IdxItem;
-			bins[addr].mHashIdx = hashIdx;
+			bins[addr] = IdxItem;
 		}
 		else if (numTries < mCuckooSize)
 		{
 			// mN times => evict
-			u64 evictIdx = bins[addr].mIdx;
-			u64 idxHash = bins[addr].mHashIdx;
-
-			bins[addr].mIdx = IdxItem;
-			bins[addr].mHashIdx = hashIdx;
+			u64 evictIdx = bins[addr];
+			bins[addr] = IdxItem;
 
 			// increments tries, %3 we use only 3 hash functions!
-			insertItem(evictIdx, hashs, (idxHash + 1) % 3, numTries + 1);
+			insertItem(evictIdx, hashs, (hashIdx + 1) % 3, numTries + 1);
 		}
 		else
 		{
