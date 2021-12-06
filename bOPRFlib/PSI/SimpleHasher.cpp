@@ -52,9 +52,9 @@ namespace bOPRF
 		mSimpleSize = simpleSize;
 		mCuckooSize = cuckooSize;
 		mBinCount = 1.2 * cuckooSize;
-		mMaxBinSize = get_bin_size(mBinCount, simpleSize * numHashFunction, statSecParam);
-		mBins.resize(mBinCount, mMaxBinSize);
-		mBinSizes.resize(mBinCount, 0);
+		mMaxBinSize = get_bin_size(mBinCount / 2, simpleSize * numHashFunction, statSecParam);
+		mBins.resize(mBinCount / 2, mMaxBinSize);
+		mBinSizes.resize(mBinCount / 2, 0);
 	}
 
 	u64 SimpleHasher::insertItems(std::array<std::vector<block>, 4> hashs)
@@ -70,12 +70,12 @@ namespace bOPRF
 			u64 addr;
 			std::array<u64, 3> idxs{-1, -1, -1};
 
-			for (u64 j = 0; j < 3; ++j)
+			for (u64 j = 0; j < 2; ++j)
 			{
 
-				u64 xrHashVal = *(u64 *)&hashs[j][i] % (mBinCount / 3);
+				u64 xrHashVal = *(u64 *)&hashs[j][i] % (mBinCount / 2);
 
-				addr = xrHashVal % (mBinCount / 3);
+				addr = xrHashVal % (mBinCount / 2);
 
 				{
 					auto bb = mBinSizes[addr]++;

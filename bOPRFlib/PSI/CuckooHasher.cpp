@@ -55,22 +55,22 @@ namespace bOPRF
 			}
 			Log::out << Log::endl;
 		}
-		for (u64 i = 0; i < mBins2.size(); ++i)
-		{
-			Log::out << "Bin #2-" << i << Log::endl;
+		// for (u64 i = 0; i < mBins2.size(); ++i)
+		// {
+		// 	Log::out << "Bin #2-" << i << Log::endl;
 
-			if (mBins2[i] == -1)
-			{
+		// 	if (mBins2[i] == -1)
+		// 	{
 
-				Log::out << " contains 0 elements\n";
-			}
-			else
-			{
-				Log::out << " contains 0 elements\n"
-						 << "    c_idx=" << mBins2[i] << "  hIdx=" << 2 << "\n";
-			}
-			Log::out << Log::endl;
-		}
+		// 		Log::out << " contains 0 elements\n";
+		// 	}
+		// 	else
+		// 	{
+		// 		Log::out << " contains 0 elements\n"
+		// 				 << "    c_idx=" << mBins2[i] << "  hIdx=" << 2 << "\n";
+		// 	}
+		// 	Log::out << Log::endl;
+		// }
 		Log::out << Log::endl;
 		Log::out << Log::unlock;
 	}
@@ -81,10 +81,10 @@ namespace bOPRF
 		mSimpleSize = simpleSize;
 		mBinCount = 1.2 * cuckooSize;
 		mMaxStashSize = get_stash_size(cuckooSize);
-		mSendersMaxBinSize = get_bin_size(mBinCount, simpleSize * 3, 40);
-		mBins0.resize(mBinCount / 3, -1);
-		mBins1.resize(mBinCount / 3, -1);
-		mBins2.resize(mBinCount / 3, -1);
+		mSendersMaxBinSize = get_bin_size(mBinCount / 2, simpleSize, 40);
+		mBins0.resize(mBinCount / 2, -1);
+		mBins1.resize(mBinCount / 2, -1);
+		// mBins2.resize(mBinCount / 3, -1);
 	}
 
 	void CuckooHasher::insertItem(u64 IdxItem, std::array<std::vector<block>, 4> &hashs, u64 hashIdx, u64 numTries)
@@ -95,7 +95,8 @@ namespace bOPRF
 
 		auto addr = (xrHashVal) % (mBinCount / 3);
 
-		std::vector<u64> &bins = hashIdx ? (hashIdx == 1 ? mBins1 : mBins2) : mBins0;
+		// std::vector<u64> &bins = hashIdx ? (hashIdx == 1 ? mBins1 : mBins2) : mBins0;
+		std::vector<u64> &bins = hashIdx ? mBins1 : mBins0;
 
 		if (bins[addr] == -1)
 		{
@@ -109,7 +110,7 @@ namespace bOPRF
 			bins[addr] = IdxItem;
 
 			// increments tries, %3 we use only 3 hash functions!
-			insertItem(evictIdx, hashs, (hashIdx + 1) % 3, numTries + 1);
+			insertItem(evictIdx, hashs, (hashIdx + 1) % 2, numTries + 1);
 		}
 		else
 		{

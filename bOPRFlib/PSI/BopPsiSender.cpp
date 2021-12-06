@@ -24,7 +24,7 @@ namespace bOPRF
 	void BopPsiSender::init(u64 senderSize, u64 recverSize, u64 statSec, const std::vector<Channel *> &chls, SSOtExtSender &otSend, block seed)
 	{
 		mStatSecParam = statSec;
-		mSenderSize = senderSize * 3;
+		mSenderSize = senderSize;
 		mRecverSize = recverSize;
 		mNumStash = get_stash_size(recverSize);
 
@@ -69,7 +69,7 @@ namespace bOPRF
 
 	void BopPsiSender::sendInput(std::vector<block> &inputs, const std::vector<Channel *> &chls)
 	{
-		if (inputs.size() * 3 != mSenderSize)
+		if (inputs.size() != mSenderSize)
 			throw std::runtime_error("rt error at " LOCATION);
 
 		//gTimer.setTimePoint("OnlineS.start");
@@ -118,15 +118,15 @@ namespace bOPRF
 		//u64 cntMask = mBins.mN;
 		std::unique_ptr<ByteStream> myMaskBuff1(new ByteStream());
 		std::unique_ptr<ByteStream> myMaskBuff2(new ByteStream());
-		std::unique_ptr<ByteStream> myMaskBuff3(new ByteStream());
+		// std::unique_ptr<ByteStream> myMaskBuff3(new ByteStream());
 		myMaskBuff1->resize(mSenderSize * maskSize);
 		myMaskBuff2->resize(mSenderSize * maskSize);
-		myMaskBuff3->resize(mSenderSize * maskSize);
+		// myMaskBuff3->resize(mSenderSize * maskSize);
 
 		//create permute array to add my mask in the permuted positions
-		std::array<std::vector<u64>, 3> permute;
-		int idxPermuteDone[3];
-		for (u64 j = 0; j < 3; j++)
+		std::array<std::vector<u64>, 2> permute;
+		int idxPermuteDone[2];
+		for (u64 j = 0; j < 2; j++)
 		{
 			permute[j].resize(mSenderSize);
 			for (u64 i = 0; i < mSenderSize; i++)
@@ -141,11 +141,11 @@ namespace bOPRF
 		//pipelining the execution of the online phase (i.e., OT correction step) into multiple batches
 		TODO("run in parallel");
 		auto binStart = 0;
-		auto binEnd = mBins.mBinCount / 3;
-		auto tableSize = mBins.mBinCount / 3;
+		auto binEnd = mBins.mBinCount / 2;
+		auto tableSize = mBins.mBinCount / 2;
 		gTimer.setTimePoint("S Online.computeBucketMask start");
 		//for each batch
-		for (u64 k = 0; k < 3; k++)
+		for (u64 k = 0; k < 2; k++)
 		{
 			for (u64 stepIdx = binStart; stepIdx < binEnd; stepIdx += stepSize)
 			{
@@ -185,12 +185,12 @@ namespace bOPRF
 						sha1.Final(hashBuff);
 
 						//put the mask into corresponding buff at the permuted position
-						if (bin[i].mHashIdx == 0) //buff 1 for hash index 0
+						if (k == 0 && bin[i].mHashIdx == 0) //buff 1 for hash index 0
 							memcpy(myMaskBuff1->data() + permute[0][idxPermuteDone[0]++] * maskSize, hashBuff, maskSize);
-						else if (bin[i].mHashIdx == 1) //buff 2 for hash index 1
+						else if (k == 1 && bin[i].mHashIdx == 1) //buff 2 for hash index 1
 							memcpy(myMaskBuff2->data() + permute[1][idxPermuteDone[1]++] * maskSize, hashBuff, maskSize);
-						else if (bin[i].mHashIdx == 2) //buff 3 for hash index 2
-							memcpy(myMaskBuff3->data() + permute[2][idxPermuteDone[2]++] * maskSize, hashBuff, maskSize);
+						// else if (bin[i].mHashIdx == 2) //buff 3 for hash index 2
+						// 	memcpy(myMaskBuff3->data() + permute[2][idxPermuteDone[2]++] * maskSize, hashBuff, maskSize);
 					}
 				}
 			}
@@ -206,7 +206,7 @@ namespace bOPRF
 		//}
 		chl.asyncSend(std::move(myMaskBuff1));
 		chl.asyncSend(std::move(myMaskBuff2));
-		chl.asyncSend(std::move(myMaskBuff3));
+		// chl.asyncSend(std::move(myMaskBuff3));
 		gTimer.setTimePoint("S Online.sendBucketMask done");
 
 		//======================STASH BIN==========================
