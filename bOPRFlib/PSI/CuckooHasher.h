@@ -15,7 +15,7 @@ namespace bOPRF
 
 		std::vector<u64> mBins0;
 		std::vector<u64> mBins1;
-		// std::vector<u64> mBins2;
+		std::vector<u64> mBins2;
 		std::vector<u64> mStash;
 
 		void print() const;

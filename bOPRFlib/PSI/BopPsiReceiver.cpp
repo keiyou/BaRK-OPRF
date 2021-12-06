@@ -161,13 +161,13 @@ namespace bOPRF
 
 		//we use 4 unordered_maps, we put the mask to the corresponding unordered_map
 		//that indicates of the hash function index 0,1,2. and the last unordered_maps is used for stash bin
-		std::array<std::unordered_map<u64, std::pair<block, u64>>, 3> localMasks;
+		std::array<std::unordered_map<u64, std::pair<block, u64> >, 3> localMasks;
 		//store the masks of elements that map to bin by h0
 		localMasks[0].reserve(mBins.mBinCount); //upper bound of # mask
 		//store the masks of elements that map to bin by h1
 		localMasks[1].reserve(mBins.mBinCount);
 		//store the masks of elements that map to bin by h2
-		// localMasks[2].reserve(mBins.mBinCount);
+		localMasks[2].reserve(mBins.mBinCount);
 
 		std::unique_ptr<ByteStream> locaStashlMasks(new ByteStream());
 		locaStashlMasks->resize(mNumStash * maskSize);
@@ -177,15 +177,14 @@ namespace bOPRF
 		//pipelining the execution of the online phase (i.e., OT correction step) into multiple batches
 		TODO("run in parallel");
 		auto binStart = 0;
-		auto binEnd = mBins.mBinCount / 2;
-		auto tableSize = mBins.mBinCount / 2;
+		auto binEnd = mBins.mBinCount / 3;
+		auto tableSize = mBins.mBinCount / 3;
 
 		gTimer.setTimePoint("R Online.computeBucketMask start");
 		//for each batch
-		for (u64 k = 0; k < 2; k++)
+		for (u64 k = 0; k < 3; k++)
 		{
-			// std::vector<u64> &bins = k ? (k == 1 ? mBins.mBins1 : mBins.mBins2) : mBins.mBins0;
-			std::vector<u64> &bins = k ? mBins.mBins1 : mBins.mBins0;
+			std::vector<u64> &bins = k ? (k == 1 ? mBins.mBins1 : mBins.mBins2) : mBins.mBins0;
 
 			for (u64 stepIdx = binStart; stepIdx < binEnd; stepIdx += stepSize)
 			{
@@ -240,7 +239,7 @@ namespace bOPRF
 		gTimer.setTimePoint("R Online.sendBucketMask done");
 
 		//receive the sender's marks, we have 3 buffs that corresponding to the mask of elements used hash index 0,1,2
-		for (u64 buffIdx = 0; buffIdx < 2; buffIdx++)
+		for (u64 buffIdx = 0; buffIdx < 3; buffIdx++)
 		{
 			ByteStream recvBuff;
 			chl.recv(recvBuff);

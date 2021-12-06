@@ -118,15 +118,15 @@ namespace bOPRF
 		//u64 cntMask = mBins.mN;
 		std::unique_ptr<ByteStream> myMaskBuff1(new ByteStream());
 		std::unique_ptr<ByteStream> myMaskBuff2(new ByteStream());
-		// std::unique_ptr<ByteStream> myMaskBuff3(new ByteStream());
+		std::unique_ptr<ByteStream> myMaskBuff3(new ByteStream());
 		myMaskBuff1->resize(mSenderSize * maskSize);
 		myMaskBuff2->resize(mSenderSize * maskSize);
-		// myMaskBuff3->resize(mSenderSize * maskSize);
+		myMaskBuff3->resize(mSenderSize * maskSize);
 
 		//create permute array to add my mask in the permuted positions
-		std::array<std::vector<u64>, 2> permute;
-		int idxPermuteDone[2];
-		for (u64 j = 0; j < 2; j++)
+		std::array<std::vector<u64>, 3> permute;
+		int idxPermuteDone[3];
+		for (u64 j = 0; j < 3; j++)
 		{
 			permute[j].resize(mSenderSize);
 			for (u64 i = 0; i < mSenderSize; i++)
@@ -141,11 +141,11 @@ namespace bOPRF
 		//pipelining the execution of the online phase (i.e., OT correction step) into multiple batches
 		TODO("run in parallel");
 		auto binStart = 0;
-		auto binEnd = mBins.mBinCount / 2;
-		auto tableSize = mBins.mBinCount / 2;
+		auto binEnd = mBins.mBinCount / 3;
+		auto tableSize = mBins.mBinCount / 3;
 		gTimer.setTimePoint("S Online.computeBucketMask start");
 		//for each batch
-		for (u64 k = 0; k < 2; k++)
+		for (u64 k = 0; k < 3; k++)
 		{
 			for (u64 stepIdx = binStart; stepIdx < binEnd; stepIdx += stepSize)
 			{
@@ -189,8 +189,8 @@ namespace bOPRF
 							memcpy(myMaskBuff1->data() + permute[0][idxPermuteDone[0]++] * maskSize, hashBuff, maskSize);
 						else if (k == 1 && bin[i].mHashIdx == 1) //buff 2 for hash index 1
 							memcpy(myMaskBuff2->data() + permute[1][idxPermuteDone[1]++] * maskSize, hashBuff, maskSize);
-						// else if (bin[i].mHashIdx == 2) //buff 3 for hash index 2
-						// 	memcpy(myMaskBuff3->data() + permute[2][idxPermuteDone[2]++] * maskSize, hashBuff, maskSize);
+						else if (k == 2 && bin[i].mHashIdx == 2) //buff 3 for hash index 2
+							memcpy(myMaskBuff3->data() + permute[2][idxPermuteDone[2]++] * maskSize, hashBuff, maskSize);
 					}
 				}
 			}
@@ -206,7 +206,7 @@ namespace bOPRF
 		//}
 		chl.asyncSend(std::move(myMaskBuff1));
 		chl.asyncSend(std::move(myMaskBuff2));
-		// chl.asyncSend(std::move(myMaskBuff3));
+		chl.asyncSend(std::move(myMaskBuff3));
 		gTimer.setTimePoint("S Online.sendBucketMask done");
 
 		//======================STASH BIN==========================
