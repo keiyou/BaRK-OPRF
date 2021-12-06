@@ -85,6 +85,7 @@ namespace bOPRF
 		mBins0.resize(mBinCount / 3, -1);
 		mBins1.resize(mBinCount / 3, -1);
 		mBins2.resize(mBinCount / 3, -1);
+		mStash.resize(mMaxStashSize, -1);
 	}
 
 	void CuckooHasher::insertItem(u64 IdxItem, std::array<std::vector<block>, 4> &hashs, u64 hashIdx, u64 numTries)
