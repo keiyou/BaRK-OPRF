@@ -21,25 +21,32 @@ namespace bOPRF
 	{
 
 		Log::out << Log::lock;
-		/*for(u64 j=0;j<3;j++)
-			Log::out << "  mHashSeeds[" << j << "] " << mHashSeeds[j] << Log::endl;*/
-		Log::out << "Simple Hasher  " << Log::endl;
-		for (u64 i = 0; i < mBins.size(); ++i)
-		//	for (u64 i = 0; i <1; ++i)
+		Log::out << "Cuckoo Hasher  " << Log::endl;
+
+		for (u64 k = 0; k < 3; k++)
 		{
-			Log::out << "Bin #" << i << Log::endl;
-
-			Log::out << " contains " << mBinSizes[i] << " elements" << Log::endl;
-
-			for (u64 j = 0; j < mBinSizes[i]; ++j)
+			std::vector<std::vector<u64> > &bins = k ? (k == 1 ? mBins1 : mBins2) : mBins0;
+			for (u64 i = 0; i < mBins0.size(); ++i)
 			{
-				Log::out << "    idx=" << mBins(i, j).mIdx << "  hIdx=" << mBins(i, j).mHashIdx << Log::endl;
-				//	Log::out << "    " << mBins[i].first[j] << "  " << mBins[i].second[j] << Log::endl;
+				Log::out << "Bin #" << k << "-" << i << Log::endl;
+
+				size_t size = bins.size();
+				if (size == 0)
+				{
+
+					Log::out << " contains 0 elements\n";
+				}
+				else
+				{
+					Log::out << " contains " << size << " elements\n";
+					for (u64 j = 0; j < size; j++)
+					{
+						Log::out << "c_idx=" << bins[i][j] << "  hIdx=" << 0 << "\n";
+					}
+				}
+				Log::out << Log::endl;
 			}
-
-			Log::out << Log::endl;
 		}
-
 		Log::out << Log::endl;
 		Log::out << Log::unlock;
 	}
@@ -52,9 +59,10 @@ namespace bOPRF
 		mSimpleSize = simpleSize;
 		mCuckooSize = cuckooSize;
 		mBinCount = 1.2 * cuckooSize;
-		mMaxBinSize = get_bin_size(mBinCount / 3, simpleSize * numHashFunction, statSecParam);
-		mBins.resize(mBinCount / 3, mMaxBinSize);
-		mBinSizes.resize(mBinCount / 3, 0);
+		mMaxBinSize = get_bin_size(mBinCount / 3, simpleSize, statSecParam);
+		mBins0.resize(mBinCount / 3, std::vector<u64>());
+		mBins1.resize(mBinCount / 3, std::vector<u64>());
+		mBins2.resize(mBinCount / 3, std::vector<u64>());
 	}
 
 	u64 SimpleHasher::insertItems(std::array<std::vector<block>, 4> hashs)
@@ -68,25 +76,15 @@ namespace bOPRF
 		for (u64 i = 0; i < hashs[0].size(); ++i)
 		{
 			u64 addr;
-			std::array<u64, 3> idxs{-1, -1, -1};
-
-			for (u64 j = 0; j < 3; ++j)
+			for (u64 k = 0; k < 3; ++k)
 			{
-
-				u64 xrHashVal = *(u64 *)&hashs[j][i] % (mBinCount / 3);
-
+				u64 xrHashVal = *(u64 *)&hashs[k][i] % (mBinCount / 3);
 				addr = xrHashVal % (mBinCount / 3);
-
-				{
-					auto bb = mBinSizes[addr]++;
-
-					mBins(addr, bb).mIdx = i;
-					mBins(addr, bb).mHashIdx = j;
-					cnt++;
-				}
+				std::vector<std::vector<u64> > &bins = k ? (k == 1 ? mBins1 : mBins2) : mBins0;
+				bins[addr].push_back(i);
+				cnt++;
 			}
 		}
 		return cnt;
 	}
-
 }

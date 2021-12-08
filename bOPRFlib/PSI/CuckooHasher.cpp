@@ -19,60 +19,32 @@ namespace bOPRF
 
 	void CuckooHasher::print() const
 	{
-
 		Log::out << Log::lock;
 		Log::out << "Cuckoo Hasher  " << Log::endl;
 
-		for (u64 i = 0; i < mBins0.size(); ++i)
+		for (u64 k = 0; k < 3; k++)
 		{
-			Log::out << "Bin #0-" << i << Log::endl;
-
-			if (mBins0[i] == -1)
+			std::vector<u64> &bins = k ? (k == 1 ? mBins1 : mBins2) : mBins0;
+			for (u64 i = 0; i < mBins0.size(); ++i)
 			{
+				Log::out << "Bin #" << k << "-" << i << Log::endl;
 
-				Log::out << " contains 0 elements\n";
+				if (mBins0[i] == -1)
+				{
+
+					Log::out << " contains 0 elements\n";
+				}
+				else
+				{
+					Log::out << " contains 1 elements\n"
+							 << "    c_idx=" << mBins0[i] << "  hIdx=" << 0 << "\n";
+				}
+				Log::out << Log::endl;
 			}
-			else
-			{
-				Log::out << " contains 0 elements\n"
-						 << "    c_idx=" << mBins0[i] << "  hIdx=" << 0 << "\n";
-			}
+
 			Log::out << Log::endl;
+			Log::out << Log::unlock;
 		}
-		for (u64 i = 0; i < mBins1.size(); ++i)
-		{
-			Log::out << "Bin #1-" << i << Log::endl;
-
-			if (mBins1[i] == -1)
-			{
-
-				Log::out << " contains 0 elements\n";
-			}
-			else
-			{
-				Log::out << " contains 0 elements\n"
-						 << "    c_idx=" << mBins1[i] << "  hIdx=" << 1 << "\n";
-			}
-			Log::out << Log::endl;
-		}
-		// for (u64 i = 0; i < mBins2.size(); ++i)
-		// {
-		// 	Log::out << "Bin #2-" << i << Log::endl;
-
-		// 	if (mBins2[i] == -1)
-		// 	{
-
-		// 		Log::out << " contains 0 elements\n";
-		// 	}
-		// 	else
-		// 	{
-		// 		Log::out << " contains 0 elements\n"
-		// 				 << "    c_idx=" << mBins2[i] << "  hIdx=" << 2 << "\n";
-		// 	}
-		// 	Log::out << Log::endl;
-		// }
-		Log::out << Log::endl;
-		Log::out << Log::unlock;
 	}
 
 	void CuckooHasher::init(u64 cuckooSize, u64 simpleSize)

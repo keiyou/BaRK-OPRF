@@ -185,7 +185,6 @@ namespace bOPRF
 		for (u64 k = 0; k < 3; k++)
 		{
 			std::vector<u64> &bins = k ? (k == 1 ? mBins.mBins1 : mBins.mBins2) : mBins.mBins0;
-
 			for (u64 stepIdx = binStart; stepIdx < binEnd; stepIdx += stepSize)
 			{
 				// compute the size of current step & end index.
