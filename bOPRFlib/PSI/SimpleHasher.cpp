@@ -25,7 +25,7 @@ namespace bOPRF
 
 		for (u64 k = 0; k < 3; k++)
 		{
-			std::vector<std::vector<u64> > &bins = k ? (k == 1 ? mBins1 : mBins2) : mBins0;
+			std::vector<std::vector<u64>> bins = k ? (k == 1 ? mBins1 : mBins2) : mBins0;
 			for (u64 i = 0; i < mBins0.size(); ++i)
 			{
 				Log::out << "Bin #" << k << "-" << i << Log::endl;
@@ -58,7 +58,7 @@ namespace bOPRF
 
 		mSimpleSize = simpleSize;
 		mCuckooSize = cuckooSize;
-		mBinCount = 1.2 * cuckooSize;
+		mBinCount = 2.4 * cuckooSize;
 		mMaxBinSize = get_bin_size(mBinCount / 3, simpleSize, statSecParam);
 		mBins0.resize(mBinCount / 3, std::vector<u64>());
 		mBins1.resize(mBinCount / 3, std::vector<u64>());
@@ -80,7 +80,7 @@ namespace bOPRF
 			{
 				u64 xrHashVal = *(u64 *)&hashs[k][i] % (mBinCount / 3);
 				addr = xrHashVal % (mBinCount / 3);
-				std::vector<std::vector<u64> > &bins = k ? (k == 1 ? mBins1 : mBins2) : mBins0;
+				std::vector<std::vector<u64>> &bins = k ? (k == 1 ? mBins1 : mBins2) : mBins0;
 				bins[addr].push_back(i);
 				cnt++;
 			}

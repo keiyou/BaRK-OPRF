@@ -147,7 +147,7 @@ namespace bOPRF
 		//for each batch
 		for (u64 k = 0; k < 3; k++)
 		{
-			std::vector<std::vector<u64> > &bins = k ? (k == 1 ? mBins.mBins1 : mBins.mBins2) : mBins.mBins0;
+			std::vector<std::vector<u64>> &bins = k ? (k == 1 ? mBins.mBins1 : mBins.mBins2) : mBins.mBins0;
 			for (u64 stepIdx = binStart; stepIdx < binEnd; stepIdx += stepSize)
 			{
 				// compute the  size of the current step and the end index
@@ -178,7 +178,7 @@ namespace bOPRF
 						auto sum = mPsiRecvSSOtMessages[bIdx + k * tableSize] ^ ((theirCorrOT[j] ^ codeWord) & blk448Choice);
 
 						sha1.Reset();
-						sha1.Update((u8 *)&bins[bIdx][i].mHashIdx, sizeof(u64)); //add hash index
+						sha1.Update((u8 *)&k, sizeof(u64)); //add hash index
 						sha1.Update((u8 *)&sum, codeWordSize);
 						sha1.Final(hashBuff);
 

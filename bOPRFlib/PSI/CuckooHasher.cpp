@@ -24,7 +24,7 @@ namespace bOPRF
 
 		for (u64 k = 0; k < 3; k++)
 		{
-			std::vector<u64> &bins = k ? (k == 1 ? mBins1 : mBins2) : mBins0;
+			std::vector<u64> bins = k ? (k == 1 ? mBins1 : mBins2) : mBins0;
 			for (u64 i = 0; i < mBins0.size(); ++i)
 			{
 				Log::out << "Bin #" << k << "-" << i << Log::endl;
@@ -51,7 +51,7 @@ namespace bOPRF
 	{
 		mCuckooSize = cuckooSize;
 		mSimpleSize = simpleSize;
-		mBinCount = 1.2 * cuckooSize;
+		mBinCount = 2.4 * cuckooSize;
 		mMaxStashSize = get_stash_size(cuckooSize);
 		mSendersMaxBinSize = get_bin_size(mBinCount / 3, simpleSize, 40);
 		mBins0.resize(mBinCount / 3, -1);
