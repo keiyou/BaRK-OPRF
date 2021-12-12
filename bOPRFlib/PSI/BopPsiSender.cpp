@@ -172,25 +172,28 @@ namespace bOPRF
 					// for each item, hash it, encode then hash it again.
 					for (u64 i = 0; i < mBins.mBinSizes[bIdx]; ++i)
 					{
-						codeWord.elem[0] = aesHashBuffs[0][bin[i].mIdx];
-						codeWord.elem[1] = aesHashBuffs[1][bin[i].mIdx];
-						codeWord.elem[2] = aesHashBuffs[2][bin[i].mIdx];
-						codeWord.elem[3] = aesHashBuffs[3][bin[i].mIdx];
+						if (k == bin[i].mHashIdx)
+						{
+							codeWord.elem[0] = aesHashBuffs[0][bin[i].mIdx];
+							codeWord.elem[1] = aesHashBuffs[1][bin[i].mIdx];
+							codeWord.elem[2] = aesHashBuffs[2][bin[i].mIdx];
+							codeWord.elem[3] = aesHashBuffs[3][bin[i].mIdx];
 
-						auto sum = mPsiRecvSSOtMessages[bIdx + k * tableSize] ^ ((theirCorrOT[j] ^ codeWord) & blk448Choice);
+							auto sum = mPsiRecvSSOtMessages[bIdx + k * tableSize] ^ ((theirCorrOT[j] ^ codeWord) & blk448Choice);
 
-						sha1.Reset();
-						sha1.Update((u8 *)&bin[i].mHashIdx, sizeof(u64)); //add hash index
-						sha1.Update((u8 *)&sum, codeWordSize);
-						sha1.Final(hashBuff);
+							sha1.Reset();
+							sha1.Update((u8 *)&bin[i].mHashIdx, sizeof(u64)); //add hash index
+							sha1.Update((u8 *)&sum, codeWordSize);
+							sha1.Final(hashBuff);
 
-						//put the mask into corresponding buff at the permuted position
-						if (k == 0 && bin[i].mHashIdx == 0) //buff 1 for hash index 0
-							memcpy(myMaskBuff1->data() + permute[0][idxPermuteDone[0]++] * maskSize, hashBuff, maskSize);
-						else if (k == 1 && bin[i].mHashIdx == 1) //buff 2 for hash index 1
-							memcpy(myMaskBuff2->data() + permute[1][idxPermuteDone[1]++] * maskSize, hashBuff, maskSize);
-						else if (k == 2 && bin[i].mHashIdx == 2) //buff 3 for hash index 2
-							memcpy(myMaskBuff3->data() + permute[2][idxPermuteDone[2]++] * maskSize, hashBuff, maskSize);
+							//put the mask into corresponding buff at the permuted position
+							if (k == 0) //buff 1 for hash index 0
+								memcpy(myMaskBuff1->data() + permute[0][idxPermuteDone[0]++] * maskSize, hashBuff, maskSize);
+							else if (k == 1) //buff 2 for hash index 1
+								memcpy(myMaskBuff2->data() + permute[1][idxPermuteDone[1]++] * maskSize, hashBuff, maskSize);
+							else if (k == 2) //buff 3 for hash index 2
+								memcpy(myMaskBuff3->data() + permute[2][idxPermuteDone[2]++] * maskSize, hashBuff, maskSize);
+						}
 					}
 				}
 			}
